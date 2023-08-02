@@ -62,7 +62,7 @@ namespace MNISTDataSet
 
             Console.WriteLine(regular2DArray.Length);
 
-            Bitmap bitmap = ConvertToBitmap(regular2DArray , regular2DArray.GetLength(0), regular2DArray.GestLength(1));
+            Bitmap bitmap = ConvertToBitmap(regular2DArray , regular2DArray.GetLength(0), regular2DArray.GetLength(1));
 
             bitmap.Save("C:\\Users\\euan\\source\\repos\\MNISTDataSet\\output.bmp");
 
