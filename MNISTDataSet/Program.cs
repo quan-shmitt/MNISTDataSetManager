@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.IO;
 using Accord.Math;
 using System.Drawing;
+using System.Net;
 
 namespace MNISTDataSet
 {
@@ -19,9 +20,32 @@ namespace MNISTDataSet
     {
         static void Main()
         {
-            string imagesPath = "C:\\Users\\euan\\Downloads\\train-images-idx3-ubyte\\train-images.idx3-ubyte";
-            string labelsPath = "C:\\Users\\euan\\Downloads\\train-labels-idx1-ubyte\\train-labels.idx1-ubyte";
-            int numImages = 60000; // Number of images to display
+
+            //download the files
+            try
+            {
+                ExtractGzip("train-images.idx3-ubyte.gz", "train-images.idx3-ubyte");
+                ExtractGzip("train-labels.idx1-ubyte.gz", "train-labels.idx1-ubyte");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                DownloadFile("http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz", "train-images.idx3-ubyte.gz");
+                DownloadFile("http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz", "train-labels.idx1-ubyte.gz");
+                try
+                {
+                    ExtractGzip("train-images.idx3-ubyte.gz", "train-images.idx3-ubyte");
+                    ExtractGzip("train-labels.idx1-ubyte.gz", "train-labels.idx1-ubyte");
+                }
+                catch (Exception Ex)
+                {
+                    Console.WriteLine(Ex.Message);
+                }
+            }
+
+            string imagesPath = "train-images.idx3-ubyte";
+            string labelsPath = "train-labels.idx1-ubyte";
+            int numImages = 60000;
 
             FileGen("images");
 
@@ -39,6 +63,29 @@ namespace MNISTDataSet
             }
 
             Console.WriteLine("Images saved as BMP files.");
+        }
+
+
+        static void DownloadFile(string url, string fileName)
+        {
+            using (WebClient client = new WebClient())
+            {
+                Console.WriteLine($"Downloading {fileName}...");
+                client.DownloadFile(url, fileName);
+                Console.WriteLine($"Download complete: {fileName}");
+            }
+        }
+
+        static void ExtractGzip(string inputFileName, string outputFileName)
+        {
+            Console.WriteLine($"Extracting {inputFileName}...");
+            System.IO.Compression.GZipStream gzipStream = new System.IO.Compression.GZipStream(
+                File.OpenRead(inputFileName), System.IO.Compression.CompressionMode.Decompress);
+            using (FileStream outputFileStream = File.Create(outputFileName))
+            {
+                gzipStream.CopyTo(outputFileStream);
+            }
+            Console.WriteLine($"Extraction complete: {outputFileName}");
         }
 
         static byte[][] ReadMNISTImages(string path, int numImages)
