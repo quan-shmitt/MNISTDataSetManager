@@ -10,80 +10,122 @@ using System.Drawing;
 
 namespace MNISTDataSet
 {
-    public class MNIST : SparseDataSet
+
+    using System;
+    using System.Drawing;
+    using System.IO;
+
+    class Program
     {
-        public string Path { get; protected set; }
-        public Tuple<Sparse<double>[], double[]> Training { get; }
-        public Tuple<Sparse<double>[], double[]> Testing { get; }
-
-        public MNIST(string path = null)
-            : base(path)
+        static void Main()
         {
-            Training = Download("https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/mnist.bz2");
-            Testing = Download("https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/mnist.t.bz2");
-        }
-        
-        
+            string imagesPath = "C:\\Users\\euan\\Downloads\\train-images-idx3-ubyte\\train-images.idx3-ubyte";
+            string labelsPath = "C:\\Users\\euan\\Downloads\\train-labels-idx1-ubyte\\train-labels.idx1-ubyte";
+            int numImages = 60000; // Number of images to display
 
-    }
+            FileGen("images");
 
+            // Read images and labels from files
+            byte[][] images = ReadMNISTImages(imagesPath, numImages);
+            byte[] labels = ReadMNISTLabels(labelsPath, numImages);
 
-    internal class Program
-    {
-        static void Main(string[] args)
-        {
-
-            MNIST mNIST = new MNIST();
-
-            Tuple<Sparse<double>[], double[]> training = mNIST.Training; 
-
-            Sparse<double>[] sparseArray = training.Item1;
-            double[] regularArray = training.Item2;
-
-            int maxSparseLength = sparseArray.Max(arr => arr.Length);
-            int regularArrayLength = regularArray.Length;
-
-            double[,] sparse2DArray = new double[sparseArray.Length, maxSparseLength];
-            for (int i = 0; i < sparseArray.Length; i++)
+            // Display images as BMP files
+            for (int i = 0; i < numImages; i++)
             {
-                Sparse<double> sparseValue = sparseArray[i];
-                for (int j = 0; j < sparseValue.Length; j++)
+                byte[] imageData = images[i];
+                byte label = labels[i];
+                string fileName = $"Images\\image_{i}_label_{label}.bmp";
+                CreateBMPFile(imageData, fileName);
+            }
+
+            Console.WriteLine("Images saved as BMP files.");
+        }
+
+        static byte[][] ReadMNISTImages(string path, int numImages)
+        {
+            byte[][] images = new byte[numImages][];
+
+            using (BinaryReader br = new BinaryReader(File.OpenRead(path)))
+            {
+                // Read file header
+                int magicNumber = ReverseBytes(br.ReadInt32());
+                int numImagesInFile = ReverseBytes(br.ReadInt32());
+                int numRows = ReverseBytes(br.ReadInt32());
+                int numCols = ReverseBytes(br.ReadInt32());
+
+                // Read image data
+                for (int i = 0; i < numImages; i++)
                 {
-                    sparse2DArray[i, j] = sparseValue[j];
+                    byte[] imageData = br.ReadBytes(numRows * numCols);
+                    images[i] = imageData;
                 }
             }
 
-            double[,] regular2DArray = new double[1, regularArrayLength];
-            for (int i = 0; i < regularArrayLength; i++)
-            {
-                regular2DArray[0, i] = regularArray[i];
-            }
-
-
-            Console.WriteLine(regular2DArray.Length);
-
-            Bitmap bitmap = ConvertToBitmap(regular2DArray , regular2DArray.GetLength(0), regular2DArray.GestLength(1));
-
-            bitmap.Save("C:\\Users\\euan\\source\\repos\\MNISTDataSet\\output.bmp");
-
+            return images;
         }
 
-        public static Bitmap ConvertToBitmap(double[,] pixels, int width, int height)
+        static byte[] ReadMNISTLabels(string path, int numLabels)
         {
+            byte[] labels = new byte[numLabels];
+
+            using (BinaryReader br = new BinaryReader(File.OpenRead(path)))
+            {
+                // Read file header
+                int magicNumber = ReverseBytes(br.ReadInt32());
+                int numLabelsInFile = ReverseBytes(br.ReadInt32());
+
+                // Read label data
+                for (int i = 0; i < numLabels; i++)
+                {
+                    byte label = br.ReadByte();
+                    labels[i] = label;
+                }
+            }
+
+            return labels;
+        }
+
+        static int ReverseBytes(int value)
+        {
+            byte[] bytes = BitConverter.GetBytes(value);
+            Array.Reverse(bytes);
+            return BitConverter.ToInt32(bytes, 0);
+        }
+
+        static void CreateBMPFile(byte[] imageData, string fileName)
+        {
+            int width = 28;
+            int height = 28;
+
             Bitmap bitmap = new Bitmap(width, height);
 
-            for (int y = 0; y < height - 1; y++)
+            for (int i = 0; i < height; i++)
             {
-                for (int x = 0; x < width - 1; x++)
+                for (int j = 0; j < width; j++)
                 {
-                    int grayscale = (int)(pixels[y, x]);
-                    Color color = Color.FromArgb(grayscale, grayscale, grayscale);
-                    bitmap.SetPixel(x, y, color);
+                    byte pixelValue = imageData[i * width + j];
+                    Color color = Color.FromArgb(pixelValue, pixelValue, pixelValue);
+                    bitmap.SetPixel(j, i, color);
                 }
             }
 
-            return bitmap;
+            bitmap.Save(fileName);
+        }
+
+        static void FileGen(string filename)
+        {
+            try
+            {
+                Directory.CreateDirectory(filename);
+                Console.WriteLine("file made");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Error: " + e.Message);
+            }
         }
     }
+
+
 }
 
