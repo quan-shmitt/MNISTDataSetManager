@@ -3,7 +3,7 @@
 
 
 
- To use, run exe located in the release. console will say downloading, extracting then file created. wait for it to say "Images saved as BMP files" before exiting.
+ To use, run script. console will say downloading, extracting then file created. wait for it to say "Images saved as BMP files" before exiting.
 
 
 
